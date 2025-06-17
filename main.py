@@ -21,18 +21,21 @@ async def get_country_outline(country: str = Query(...)):
         return PlainTextResponse(f"Could not fetch Wikipedia page for {country}", status_code=404)
 
     soup = BeautifulSoup(response.text, "html.parser")
+
+    # ✅ 1️⃣ Extract true page title FIRST
     page_title = soup.find('h1', id="firstHeading")
     title_text = page_title.get_text().strip() if page_title else country.strip()
 
+    # ✅ 2️⃣ Extract only h2–h6 for sections
     headings = soup.find_all(['h2', 'h3', 'h4', 'h5', 'h6'])
 
-    markdown = "## Contents\n\n"
-    markdown += f"# {title_text}\n\n"
+    # ✅ 3️⃣ Build markdown: always starts with # Title
+    markdown = f"# {title_text}\n\n"
 
     for heading in headings:
         text = heading.get_text().strip()
         if text.lower() == "contents":
-            continue  # skip the built-in Wikipedia Contents heading
+            continue  # skip TOC heading
         level = int(heading.name[1])
         markdown += f"{'#' * level} {text}\n\n"
 
